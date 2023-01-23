@@ -23,8 +23,8 @@ class Maybe<Value>{
     // Call vs Apply vs Bind -- https://medium.com/@leonardobrunolima/javascript-tips-apply-vs-call-vs-bind-d738a9e8b4e1
     private static ignoreOperationIfValueIsNothing(target:Maybe<any>, propertyKey: string, descriptor:TypedPropertyDescriptor<(this:Maybe<any>, ...args) => any>) {
         const originalMethod = descriptor.value
-        descriptor.value = function(this:Maybe<any>, ...fn){
-            return this.isNothing() ? this : originalMethod.apply(this, fn)
+        descriptor.value = function(this:Maybe<any>, ...args){
+            return this.isNothing() ? this : originalMethod.apply(this, args)
         }
     } 
 
