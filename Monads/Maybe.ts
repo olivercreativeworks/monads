@@ -6,50 +6,63 @@ interface Monad<Value> extends MonadDefinitions.Monad<Value>{
 interface Applicative<Value> extends MonadDefinitions.Applicative<Value>{
 }
 
-export class Maybe<Value> implements Applicative<Value>{
-    $value?:Value | null
+class Maybe<Value>{
+    private $value?:Value
 
-    constructor(value: Value){
-        this.$value = value
+    constructor(x:Value){
+        console.log(x)
+        this.$value = x
     }
-
+    
     static of<A>(x:A):Maybe<A>{
         return new Maybe(x)
     }
 
-    isNothing():Boolean{
+    // Decorator Function -- https://saul-mirone.github.io/a-complete-guide-to-typescript-decorator/
+    //                       https://www.typescriptlang.org/docs/handbook/decorators.html
+    // Call vs Apply vs Bind -- https://medium.com/@leonardobrunolima/javascript-tips-apply-vs-call-vs-bind-d738a9e8b4e1
+    private static ignoreOperationIfValueIsNothing(target:Maybe<any>, propertyKey: string, descriptor:TypedPropertyDescriptor<(this:Maybe<any>, ...args) => any>) {
+        const originalMethod = descriptor.value
+        descriptor.value = function(this:Maybe<any>, ...fn){
+            return this.isNothing() ? this : originalMethod.apply(this, fn)
+        }
+    } 
+
+    private isNothing():Boolean{
         return this.$value == null || this.$value == undefined
     }
 
-    // typecasting 
-    // https://www.typescripttutorial.net/typescript-tutorial/type-casting/
-    map<B>(fn:(value:Value) => B): Maybe<B> {
-        return this.isNothing() ? this as Maybe<null> : Maybe.of(fn(this.$value))
+    @Maybe.ignoreOperationIfValueIsNothing
+    map<A>(fn:(value:Value) => A): Maybe<A> {
+        return Maybe.of(fn(this.$value as Value))
     }
 
-    // specifying the type of 'this'
-    // https://www.typescriptlang.org/docs/handbook/2/functions.html
-    // https://stackoverflow.com/questions/28920753/declaring-the-type-of-this-in-a-typescript-function
+    @Maybe.ignoreOperationIfValueIsNothing
     join<A>(this:Maybe<Maybe<A>>): Maybe<A>{
-        return this.isNothing() ? this as Maybe<null> : Maybe.of(this.$value.$value)
-        // return this.isNothing() ? this : this.$value
+        return Maybe.of(this.$value.$value)
     }
+
     flatmap<A>(fn:(value:Value) => Maybe<A>): Maybe<A>{
         return this.map(fn).join()
     }
+
+    @Maybe.ignoreOperationIfValueIsNothing
     filter(fn:(value:Value) => Boolean): Maybe<Value>{
-        return this.isNothing() ? this as Maybe<null> : fn(this.$value) ? this as Maybe<Value> : Maybe.of(null)
+        return fn(this.$value) ? this : Maybe.of(null)
     }
+
+    @Maybe.ignoreOperationIfValueIsNothing
     ap<A, B>(this:Maybe<(value:A) => B>, otherMaybe:Maybe<A>): Maybe<B>{
-        return this.isNothing() ? this as Maybe<null> : otherMaybe.map(this.$value)
+        return otherMaybe.map(this.$value)
     }
 
+    @Maybe.ignoreOperationIfValueIsNothing
     traverse<A, B extends Monad<A>, C extends Monad<Maybe<A>>> (fn: (value: Value) => B, of: (value: Maybe<A>) => C): C{
-        return this.isNothing() ? of(this as Maybe<null>) : fn(this.$value).map(Maybe.of) as C
+        return fn(this.$value).map(Maybe.of) as C
     }
 
 
-    identity<A>(x:A):A{
+    private identity<A>(x:A):A{
         return x
     }
 
@@ -57,3 +70,6 @@ export class Maybe<Value> implements Applicative<Value>{
         return this.traverse(this.identity, of)
     }
 }
+
+console.log( Maybe.of(14).map(x  => x* 2).map(x => x.toString()) ) // Logs Maybe("28")
+console.log( Maybe.of(14).map(x => null).map(x => x.toString()))   // Logs Maybe(null)
