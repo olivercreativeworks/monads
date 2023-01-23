@@ -56,9 +56,8 @@ class Maybe<Value>{
         return otherMaybe.map(this.$value)
     }
 
-    @Maybe.ignoreOperationIfValueIsNothing
     traverse<A, B extends Monad<A>, C extends Monad<Maybe<A>>> (fn: (value: Value) => B, of: (value: Maybe<A>) => C): C{
-        return fn(this.$value).map(Maybe.of) as C
+        return this.isNothing() ? of(this as Maybe<null>) : fn(this.$value).map(Maybe.of) as C
     }
 
 
