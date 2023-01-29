@@ -1,6 +1,8 @@
 //https://spin.atomicobject.com/2018/01/15/typescript-flexible-nominal-typing/
 
 import { MonadDefinitions } from "./Interfaces"
+import { Either } from "./Either"
+
 interface Monad<Value> extends MonadDefinitions.Monad<Value>{
 }
 interface Applicative<Value> extends MonadDefinitions.Applicative<Value>{
@@ -8,11 +10,6 @@ interface Applicative<Value> extends MonadDefinitions.Applicative<Value>{
 
 class Maybe<Value>{
     private $value?:Value
-
-    constructor(x:Value){
-        console.log(x)
-        this.$value = x
-    }
     
     static of<A>(x:A):Maybe<A>{
         return new Maybe(x)
@@ -23,10 +20,15 @@ class Maybe<Value>{
     // Call vs Apply vs Bind -- https://medium.com/@leonardobrunolima/javascript-tips-apply-vs-call-vs-bind-d738a9e8b4e1
     private static ignoreOperationIfValueIsNothing(target:Maybe<any>, propertyKey: string, descriptor:TypedPropertyDescriptor<(this:Maybe<any>, ...args) => any>) {
         const originalMethod = descriptor.value
-        descriptor.value = function(this:Maybe<any>, ...fn){
-            return this.isNothing() ? this : originalMethod.apply(this, fn)
+        descriptor.value = function(this:Maybe<any>, ...args){
+            return this.isNothing() ? this : originalMethod.apply(this, args)
         }
-    } 
+    }
+    
+    constructor(x:Value){
+        console.log(x)
+        this.$value = x
+    }
 
     private isNothing():Boolean{
         return this.$value == null || this.$value == undefined
@@ -56,9 +58,8 @@ class Maybe<Value>{
         return otherMaybe.map(this.$value)
     }
 
-    @Maybe.ignoreOperationIfValueIsNothing
     traverse<A, B extends Monad<A>, C extends Monad<Maybe<A>>> (fn: (value: Value) => B, of: (value: Maybe<A>) => C): C{
-        return fn(this.$value).map(Maybe.of) as C
+        return this.isNothing() ? of(this as Maybe<null>) : fn(this.$value).map(Maybe.of) as C
     }
 
 
@@ -66,10 +67,11 @@ class Maybe<Value>{
         return x
     }
 
-    sequence<A, B extends Monad<Maybe<A>>>(this: Maybe<Monad<A>>, of: (value: Maybe<A>) => B ){
+    sequence<A, B extends Monad<Maybe<A>>>(this: Maybe<Monad<A>>, of: (value: Maybe<A>) => B ):B{
         return this.traverse(this.identity, of)
     }
 }
 
 console.log( Maybe.of(14).map(x  => x* 2).map(x => x.toString()) ) // Logs Maybe("28")
 console.log( Maybe.of(14).map(x => null).map(x => x.toString()))   // Logs Maybe(null)
+// console.log( Maybe.of(Either.of(3)).sequence(Either.of).sequence(x => x) )
