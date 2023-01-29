@@ -4,10 +4,10 @@ interface Monad<Value> extends MonadDefinitions.Monad<Value>{
 interface Applicative<Value> extends MonadDefinitions.Applicative<Value>{
 }
 
-class Either<Value> implements Applicative<Value>{
-    $value: Value
-    isLeft: boolean
-    isRight: boolean
+export class Either<Value> implements Applicative<Value>{
+    private $value: Value
+    private isLeft: boolean
+    private isRight: boolean
 
     static of<A>(value:A):Either<A>{
         return new Either(value)
@@ -17,7 +17,7 @@ class Either<Value> implements Applicative<Value>{
         return new Either(value, true)
     }
 
-    static ignoreOperationIfLeft(target:Either<any>, propertyName: string, descriptor:TypedPropertyDescriptor<(this:Either<any>, ...args) => any>){
+    private static ignoreOperationIfLeft(target:Either<any>, propertyName: string, descriptor:TypedPropertyDescriptor<(this:Either<any>, ...args) => any>){
         const originalMethod = descriptor.value
         descriptor.value = function(this:Either<any>,...args) {
             return this.isLeft ? this : originalMethod.apply(this, args)
@@ -57,7 +57,7 @@ class Either<Value> implements Applicative<Value>{
         return x
     }
 
-    sequence<A, B extends Monad<Either<A>>, C extends (value:A) => Value>(this: Either<Monad<A>>, of: ((value: Either<A>)=> B) & C):B{
+    sequence<A, B extends Monad<Either<A>>>(this: Either<Monad<A>>, of: (value: Either<A>)=> B): B{
         return this.traverse(this.identity, of as (value: Either<A>)=> B)
     }
 

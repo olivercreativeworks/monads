@@ -1,6 +1,8 @@
 //https://spin.atomicobject.com/2018/01/15/typescript-flexible-nominal-typing/
 
 import { MonadDefinitions } from "./Interfaces"
+import { Either } from "./Either"
+
 interface Monad<Value> extends MonadDefinitions.Monad<Value>{
 }
 interface Applicative<Value> extends MonadDefinitions.Applicative<Value>{
@@ -8,11 +10,6 @@ interface Applicative<Value> extends MonadDefinitions.Applicative<Value>{
 
 class Maybe<Value>{
     private $value?:Value
-
-    constructor(x:Value){
-        console.log(x)
-        this.$value = x
-    }
     
     static of<A>(x:A):Maybe<A>{
         return new Maybe(x)
@@ -26,7 +23,12 @@ class Maybe<Value>{
         descriptor.value = function(this:Maybe<any>, ...args){
             return this.isNothing() ? this : originalMethod.apply(this, args)
         }
-    } 
+    }
+    
+    constructor(x:Value){
+        console.log(x)
+        this.$value = x
+    }
 
     private isNothing():Boolean{
         return this.$value == null || this.$value == undefined
@@ -65,10 +67,11 @@ class Maybe<Value>{
         return x
     }
 
-    sequence<A, B extends Monad<Maybe<A>>>(this: Maybe<Monad<A>>, of: (value: Maybe<A>) => B ){
+    sequence<A, B extends Monad<Maybe<A>>>(this: Maybe<Monad<A>>, of: (value: Maybe<A>) => B ):B{
         return this.traverse(this.identity, of)
     }
 }
 
 console.log( Maybe.of(14).map(x  => x* 2).map(x => x.toString()) ) // Logs Maybe("28")
 console.log( Maybe.of(14).map(x => null).map(x => x.toString()))   // Logs Maybe(null)
+// console.log( Maybe.of(Either.of(3)).sequence(Either.of).sequence(x => x) )
