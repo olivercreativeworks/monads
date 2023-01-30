@@ -1,10 +1,9 @@
 import { MonadDefinitions } from "./Interfaces"
-interface Monad<Value> extends MonadDefinitions.Monad<Value>{
-}
+
 interface Applicative<Value> extends MonadDefinitions.Applicative<Value>{
 }
 
-class List<Value>{
+export class List<Value>{
     $value: Value[]
 
     constructor(value: Value[]){
