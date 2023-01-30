@@ -1,14 +1,11 @@
 //https://spin.atomicobject.com/2018/01/15/typescript-flexible-nominal-typing/
 
 import { MonadDefinitions } from "./Interfaces"
-import { Either } from "./Either"
 
 interface Monad<Value> extends MonadDefinitions.Monad<Value>{
 }
-interface Applicative<Value> extends MonadDefinitions.Applicative<Value>{
-}
 
-class Maybe<Value>{
+export class Maybe<Value>{
     private $value?:Value
     
     static of<A>(x:A):Maybe<A>{
@@ -74,4 +71,3 @@ class Maybe<Value>{
 
 console.log( Maybe.of(14).map(x  => x* 2).map(x => x.toString()) ) // Logs Maybe("28")
 console.log( Maybe.of(14).map(x => null).map(x => x.toString()))   // Logs Maybe(null)
-// console.log( Maybe.of(Either.of(3)).sequence(Either.of).sequence(x => x) )
